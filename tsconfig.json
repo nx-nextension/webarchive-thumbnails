@@ -1,0 +1,10 @@
+{
+
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "paths": {
+      "@app/*": ["./src/*"],
+    }
+  }
+}

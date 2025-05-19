@@ -1,0 +1,11 @@
+node_modules/
+data/
+docker-compose.override.yml
+compose.override.yaml
+.idea
+.env
+/test/results
+/failed
+/conf/app/config.js
+/extensions
+/*.txt

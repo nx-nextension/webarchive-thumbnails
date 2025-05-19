@@ -1,0 +1,79 @@
+FROM node:lts-alpine3.21 AS node
+
+# check available chromium versions here (matching base image version):
+# https://pkgs.alpinelinux.org/packages?name=chromium&branch=v3.17&repo=&arch=&maintainer=
+# match puppeteer from release history here:
+# https://github.com/puppeteer/puppeteer/releases
+# Example: puppeteer 19.4.0 has "chromium: roll to Chromium 109.0.5412.0 (r1069273)"
+# which more or less matches alpine 3.17 package chromium 109.0.5414.74-r0
+
+#ENV CHROMIUM_VERSION=133.0.6943.141-r0
+# alpine 3.20
+#ENV CHROMIUM_VERSION=131.0.6778.108-r0
+# alpine 3.21
+ENV CHROMIUM_VERSION=134.0.6998.88-r0
+
+#RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+RUN apk add --no-cache su-exec shadow openssl python3 alpine-sdk \
+  freetype \
+  harfbuzz \
+  ttf-freefont \
+  libx11 \
+  dbus \
+  chromium=${CHROMIUM_VERSION} \
+  chromium-swiftshader=${CHROMIUM_VERSION} \
+  chromium-chromedriver=${CHROMIUM_VERSION} \
+  font-noto-emoji \
+  libstdc++ \
+  nss \
+  dbus \
+  msttcorefonts-installer \
+  fontconfig \
+  && update-ms-fonts \
+  && fc-cache -f \
+  && rm -rf /var/cache/* \
+  && mkdir /var/cache/apk
+
+# defines whether to install development tools (jest)
+ARG NPM_INSTALL_CMD=ci
+
+# Uncomment to skip the chromium download when installing puppeteer. If you do,
+# you'll need to launch puppeteer with:
+#     browser.launch({executablePath: 'google-chrome-unstable'})
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+
+# Install puppeteer so it's available in the container.
+WORKDIR /usr/src/app
+
+# Add user so we don't need --no-sandbox.
+# RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video,${GROUPID:-33} pptruser \
+#   && mkdir -p /home/pptruser/Downloads \
+#   && chown -R pptruser:pptruser /home/pptruser \
+#   && chown -R pptruser:pptruser /usr/src/app
+
+# run node as user nodejs(1001)
+RUN addgroup -S pptruser \
+  && adduser -G pptruser -D -u 1001 pptruser \
+  && chown -R pptruser:pptruser /home/pptruser \
+  && chown -R pptruser:pptruser /usr/src/app
+
+# Run everything after as non-privileged user.
+USER pptruser
+
+# install thumbnail app
+#COPY ./config/process.env-dev.yml /usr/src/app/process.yml
+COPY --chown=pptruser:pptruser package*.json ./
+COPY --chown=pptruser:pptruser ./src/*.js ./src/
+RUN ls -l /usr/src/app
+
+
+RUN npm ${NPM_INSTALL_CMD} \
+  && npm audit fix --audit-level=critical \
+  # install rebrowser puppeteer patches (might fail on newer versions)
+  && npx -y rebrowser-patches@latest patch --packageName puppeteer-core
+
+# solution without pm2
+# !! only use with --init flag (init:true) in docker-compose
+#ENTRYPOINT ["/usr/local/bin/node", "/usr/src/app/src/index.js"]
+ENTRYPOINT ["./node_modules/.bin/pm2-docker", "--"]
+CMD ["process.yml"]

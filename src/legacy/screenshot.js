@@ -250,20 +250,22 @@ async function doPageScreenshot(
 
   //job.log('waiting for idle');
   //job.progress(25);
-  //await page.waitForNetworkIdle({ idleTime: 200 });
+  await page.waitForNetworkIdle({ idleTime: 200 });
   job.progress(26);
-  await setTimeout(750);
+  //await setTimeout(750);
   job.progress(27);
   // fix ENAMETOOLONG for very long target filenames (maximum 255 characters for ext4)
   targetFilename = targetFilename.substr(0, 255);
 
   await page.bringToFront();
   const result = await page.screenshot({
-    path: targetFilename,
-    type: 'webp', // jpeg, png, webp
+    path: targetFilename + '.jpeg',
+    type: 'jpeg', // jpeg, png, webp
     //type: 'webp',
     quality: 90,
     omitBackground: false,
+    fullPage: true,
+    captureBeyondViewport: true,
     // clip: {
     //   x: 2,
     //   y: PYWB_TOOLBAR_HEIGHT,
@@ -271,7 +273,29 @@ async function doPageScreenshot(
     //   height: 1024,
     // },
   });
+  // await page.screenshot({
+  //   path: targetFilename + '.webp',
+  //   type: 'webp', // jpeg, png, webp
+  //   //type: 'webp',
+  //   quality: 90,
+  //   omitBackground: false,
+  //   fullPage: true,
+
+  //   // clip: {
+  //   //   x: 2,
+  //   //   y: PYWB_TOOLBAR_HEIGHT,
+  //   //   width: 1366 - 4,
+  //   //   height: 1024,
+  //   // },
+  // });
   job.progress(80);
+
+  // function PromiseTimeout(delayms) {
+  //   return new Promise(function (resolve, reject) {
+  //     setTimeout(resolve, delayms);
+  //   });
+  // }
+  // await PromiseTimeout(10000);
 
   //const t0 = performance.now();
   const diff = await getImageWhite(result);
@@ -322,13 +346,14 @@ const screenshot = async (
   failedPath = failedPath ?? conf.testsFailedDir;
   logger.info('generateScreenshot', url, 'target filename', targetFilename);
 
+  console.log({ url, targetFilename, job });
   let browser;
   let page;
   try {
     // host rules for local development
     let hostRules;
 
-    if (conf.dockerHostLookup === true) {
+    if (conf?.dockerHostLookup === true) {
       dockerHostIp = await util.promisify(dns.lookup)('host.docker.internal');
       logger.info(
         `using remapped dns for development (docker host=${dockerHostIp.address})`
@@ -366,7 +391,7 @@ const screenshot = async (
       '--allow-insecure-localhost',
       //'--no-first-run',
       '--homepage=about:blank',
-      '--disable-gpu',
+      //'--disable-gpu',
       '--use-gl=swiftshader',
       '--disable-software-rasterizer',
       '--no-sandbox',
@@ -408,7 +433,7 @@ const screenshot = async (
         ignoreHTTPSErrors: true,
         dumpio: false,
         args,
-        devtools: false,
+        devtools: true,
         extraPrefsFirefox: {
           'network.proxy.type': 1,
           'network.proxy.http': '127.0.0.1',
@@ -421,7 +446,7 @@ const screenshot = async (
           'browser.startup.homepage': 'about:blank',
           'network.captive-portal-service.enabled': false,
         },
-        protocolTimeout: 15_000,
+        protocolTimeout: 30_000,
         headless:
           process.env['APP_BROWSER_HEADLESS'] === 'false' ? false : true,
       });
@@ -436,6 +461,10 @@ const screenshot = async (
 
       try {
         browser = await launchPuppeteer();
+        console.log({ browser });
+        browser?.on('error', (err) => {
+          console.error(err);
+        });
         browser?.on('disconnected', async () => {
           // make sure everything is terminated
           if (browser?.process()) {
@@ -462,9 +491,6 @@ const screenshot = async (
     await page.setUserAgent(
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
     );
-
-    // const cap = new PuppeteerCapturer(page, 'request');
-    // cap.startCapturing();
 
     const version = await page.browser().version();
     job.log(`using engine ${version}`);

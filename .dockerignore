@@ -1,9 +1,10 @@
 .env
+.prettierrc
 docker
 node_modules
 .gitignore
-docker-compose.yml
-docker-compose*
-data
+compose*.yaml
+/data
 *.jpg
 *.png
+*.avif

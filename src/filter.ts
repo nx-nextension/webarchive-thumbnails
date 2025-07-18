@@ -18,6 +18,7 @@ async function loadBlockedDomains(path) {
   }
 }
 
+let blockedDomainsSet = new Set();
 async function checkDomain(domain) {
   if (blockedDomainsSet.has(domain)) {
     return { domain, allowed: false };

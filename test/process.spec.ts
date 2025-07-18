@@ -1,4 +1,4 @@
-import { screenshot } from '@app/screenshot.js';
+import { screenshot } from '@app/page.js';
 import dotenv from 'dotenv';
 import { getJobId, waitForThumbnail, thumbnailExists } from '@app/cli.js';
 import axios from 'axios';
@@ -29,8 +29,8 @@ describe('Create puppeteer screenshot', () => {
       //   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
       //product: 'firefox',
       process.env['APP_BROWSER_PATH'] =
-        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-      //process.env['APP_BROWSER_HEADLESS'] = 'false';
+        '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary';
+      process.env['APP_BROWSER_HEADLESS'] = 'true';
     }
     dotenv.config();
   });
@@ -58,7 +58,9 @@ describe('Create puppeteer screenshot', () => {
     };
 
     await screenshot(
-      './test/results/test-screenshot-external-pdf.jpg',
+      'https://web.archive.org/web/20110923161105/http://www.samsung.com/us/microsite/galaxysII',
+      //'https://nextension.com',
+      'screenshot.jpg',
       {
         progress: (p) => console.log(p),
         log: (t) => console.log(t),
@@ -75,7 +77,7 @@ describe('Create puppeteer screenshot', () => {
       index_time: '2020-11-10T17:56:23.330Z',
       ehs_wayback_date: '20181221142154',
       ehs_webarchive_collection: 'nb-webarchive',
-      ehs_start_url: 'http://www.abcd123456.com',
+      ehs_start_url: 'http://www.google.com',
       ehs_urn_id: 'bel-123456',
     };
     const cacheIndexDate = doc['index_time'].substr(0, 10).replace(/-/g, '');

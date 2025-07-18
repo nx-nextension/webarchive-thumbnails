@@ -1,4 +1,31 @@
 services:
+  puppeteer:
+    #image: ghcr.io/nx-nextension/webarchive-thumbnails/puppeteer:latest
+    build:
+      dockerfile: ./.docker/puppeteer/Dockerfile.alpine
+      context: .
+    # see https://blog.jessfraz.com/post/how-to-use-new-docker-seccomp-profiles/
+
+    security_opt:
+      - seccomp=./chrome.json
+    environment:
+      - "CAPTCHA_SOLVER_API_KEY=${CAPTCHA_SOLVER_API_KEY}"
+      - "PPTR_STEALTH=${PPTR_STEALTH}"
+      - "PPTR_CAPTCHA=${PPTR_CAPTCHA}"
+      - "PPTR_ANONYMIZE_UA=${PPTR_ANONYMIZE_UA}"
+      - "PPTR_USER_PREFERENCES=${PPTR_USER_PREFERENCES}"
+    volumes:
+      #- ./conf/app/config.js:/usr/src/app/config/config.js
+      - ./src:/app/src
+      - ./extensions:/extensions
+      - ./data:/data
+    depends_on:
+      - valkey
+    networks:
+      - backend
+    restart: always
+    init: true
+
   valkey:
     image: valkey/valkey
     restart: unless-stopped
@@ -9,41 +36,16 @@ services:
     sysctls:
       net.core.somaxconn: 1024
     networks:
-      - webarchive-thumbnails
+      - backend
     healthcheck:
       test: [ "CMD", "valkey-cli", "--raw", "incr", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  puppeteer:
-    build:
-      dockerfile: ./.docker/puppeteer/Dockerfile.alpine
-      context: .
-    # see https://blog.jessfraz.com/post/how-to-use-new-docker-seccomp-profiles/
-    security_opt:
-      - seccomp=./chrome.json
-    environment:
-      APP_ACCESS_PASS: "${APP_ACCESS_PASS}"
-      APP_BASIC_AUTH_USER: "${APP_BASIC_AUTH_USER}"
-      APP_BASIC_AUTH_PASS: "${APP_BASIC_AUTH_PASS}"
-      CAPTCHA_SOLVER_API_KEY: "${CAPTCHA_SOLVER_API_KEY}"
-    volumes:
-      - ./conf/app/config.js:/usr/src/app/config/config.js
-      - ./src:/usr/src/app/src
-      - ./data/pm2:/.pm2
-      - ./extensions:/extensions
-      - ./data/failed:/failed
-    depends_on:
-      - valkey
-    networks:
-      - webarchive-thumbnails
-    restart: always
-    init: true
-
 volumes:
   valkey_data:
 
 networks:
-  webarchive-thumbnails:
-    name: ${COMPOSE_NETWORK_PREFIX}webarchive-thumbnails
+  backend:
+    name: ${COMPOSE_NETWORK_PREFIX}-webarchive-screenshots

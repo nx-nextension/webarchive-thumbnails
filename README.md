@@ -1,6 +1,22 @@
 # Webarchive Thumbnailing
 
-This repository contains code to generate screenshots from webpages and was used for the Webarchive Switzerland Collage application. It can be used free of charge as a starter base to create similar collages and projects.
+This repository contains code to generate screenshots from webpages and was initially used for the Webarchive Switzerland Collage application. It can be used free of charge as a starter base to create similar collages and projects.
+The code has been extended for generic screenshotting of external websites with the usage of bot detection evasion techniques (e.g. puppeteer-stealth)
+
+## Useful links
+
+- Cloudflare Challenge
+  - Test page: https://www.scrapingcourse.com/cloudflare-challenge (and https://www.scrapingcourse.com/ in general)
+- Headless Bot detection
+  - Test page: https://bot.sannysoft.com
+- Browser fingerprinting
+  - https://niespodd.github.io/browser-fingerprinting/
+  - https://deviceandbrowserinfo.com/info_device
+- Puppeteer stealth
+  - https://www.npmjs.com/package/puppeteer-extra-plugin-stealth
+- Rebrowser Patches and bot detector
+  - https://github.com/rebrowser/rebrowser-patches
+  - https://bot-detector.rebrowser.net/
 
 ## Related repositories
 

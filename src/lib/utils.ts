@@ -1,12 +1,8 @@
-const path = require('path');
-const crypto = require('crypto');
-const fs = require('fs');
-const zlib = require('zlib');
-
-/**
- * Note: these functions are duplicated from module access-middleware
- * and need to match.
- */
+import path from 'node:path';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import zlib from 'node:zlib';
+import sharp, { type FormatEnum } from 'sharp';
 
 /**
  * Updated shortHash function for filename shortening. Need to keep
@@ -17,7 +13,7 @@ const zlib = require('zlib');
  * @param {} message
  * @param {*} count
  */
-variableShortHash = (message, count = 8) => {
+export const variableShortHash = (message, count = 8) => {
   return crypto
     .createHash('shake256', { outputLength: count })
     .update(message)
@@ -32,7 +28,7 @@ variableShortHash = (message, count = 8) => {
  *
  * @param {*} filename
  */
-shortenPathname = (filename, LIMIT_FILENAME = 250) => {
+export const shortenPathname = (filename, LIMIT_FILENAME = 250) => {
   const { dir, root, base, name, ext } = path.parse(filename);
 
   if (base?.length > LIMIT_FILENAME) {
@@ -49,7 +45,7 @@ shortenPathname = (filename, LIMIT_FILENAME = 250) => {
   }
 };
 
-const gzipFile = async (inputFilePath, outputFilePath) => {
+export const gzipFile = async (inputFilePath, outputFilePath) => {
   return new Promise((resolve, reject) => {
     const inputStream = fs.createReadStream(inputFilePath);
     const outputStream = fs.createWriteStream(outputFilePath);
@@ -61,7 +57,7 @@ const gzipFile = async (inputFilePath, outputFilePath) => {
     // Handle successful completion
     outputStream.on('finish', () => {
       console.log(`File successfully gzipped: ${outputFilePath}`);
-      resolve();
+      resolve(undefined);
     });
 
     // Handle any errors during the process
@@ -76,7 +72,25 @@ const gzipFile = async (inputFilePath, outputFilePath) => {
     });
   });
 };
-module.exports = {
-  shortenPathname,
-  gzipFile,
+
+export const saveConvertedImage = async (
+  buffer: Uint8Array<ArrayBufferLike>,
+  format: keyof FormatEnum,
+  path: string
+) => {
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+
+  const MAX_WIDTH = 16384;
+  const MAX_HEIGHT = 16384;
+  let outputImage = image;
+  if (metadata.width > MAX_WIDTH || metadata.height > MAX_HEIGHT) {
+    outputImage = image.extract({
+      left: 0,
+      top: 0,
+      width: MAX_WIDTH,
+      height: MAX_HEIGHT,
+    });
+  }
+  await outputImage.toFormat(format).toFile(path);
 };
